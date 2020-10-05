@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+
+  client:
+    build:
+      context: client
+      dockerfile: Dockerfile.prod
+    ports:
+      - '80:80'
+    networks:
+      - agent-domain
+  server:
+    build:
+      context: server
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+      - ${WEBHOOK_PORT}:${WEBHOOK_PORT}
+
+    environment:
+      WEBHOOK_HOST: 0.0.0.0
+      ADMIN_URL: http://agent:${ADMIN_PORT}
+      WEBHOOK_PORT: ${WEBHOOK_PORT}
+    networks:
+      - agent-domain
+    entrypoint: /bin/bash
+    command: [
+      "-c",
+      "python -u app/main.py;"
+    ]
+  agent:
+    build:
+      context: agent
+      dockerfile: Dockerfile.prod
+    environment:
+      AGENT_NAME: ${AGENT_NAME}
+      PORT: ${HTTP_PORT}
+      ENDPOINT: http://194.61.21.227:${HTTP_PORT}
+      ADMIN_PORT: ${ADMIN_PORT}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+    ports:
+      - ${HTTP_PORT}:${HTTP_PORT}
+      - ${ADMIN_PORT}:${ADMIN_PORT}
+    networks:
+      - agent-domain
+networks:
+  agent-domain:

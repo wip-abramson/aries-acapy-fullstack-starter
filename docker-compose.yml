@@ -1,0 +1,58 @@
+version: "3"
+services:
+  client:
+    tty: true
+    build:
+      context: client
+      dockerfile: Dockerfile
+    volumes:
+      - ./client/src:/usr/src/app/src
+    ports:
+      - 3000:3000
+    networks:
+      - agent-domain
+  server:
+    build:
+      context: server
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+      - ${WEBHOOK_PORT}:${WEBHOOK_PORT}
+
+    environment:
+      WEBHOOK_HOST: 0.0.0.0
+      ADMIN_URL: http://agent:${ADMIN_PORT}
+      WEBHOOK_PORT: ${WEBHOOK_PORT}
+    networks:
+      - agent-domain
+    entrypoint: /bin/bash
+    command: [
+      "-c",
+      "python -u app/main.py;"
+    ]
+  ngrok-agent:
+    image: wernight/ngrok
+    command: ngrok http agent:${HTTP_PORT} --log stdout
+    networks:
+      - agent-domain
+  agent:
+    build:
+      context: agent
+      dockerfile: Dockerfile
+    environment:
+      NGROK_NAME: ngrok-agent
+      AGENT_NAME: OpenMined
+      PORT: ${HTTP_PORT}
+      ADMIN_PORT: ${ADMIN_PORT}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+    ports:
+      - ${HTTP_PORT}:${HTTP_PORT}
+      - ${ADMIN_PORT}:${ADMIN_PORT}
+    networks:
+      - agent-domain
+    volumes:
+      - wallet:/home/indy/.indy_client/wallet
+networks:
+  agent-domain:
+volumes:
+  wallet:
