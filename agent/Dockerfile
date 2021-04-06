@@ -1,5 +1,6 @@
 FROM bcgovimages/von-image:py36-1.15-0
-#FROM bcgovimages/aries-cloudagent:py36-1.14-1_0.5.1
+#FROM bcgovimages/aries-cloudagent:py36-1.15-1_0.6.0
+
 
 USER root
 RUN apt-get update

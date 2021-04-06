@@ -23,6 +23,7 @@ services:
       WEBHOOK_HOST: 0.0.0.0
       ADMIN_URL: http://agent:${ADMIN_PORT}
       WEBHOOK_PORT: ${WEBHOOK_PORT}
+      API_KEY: ${ADMIN_API_KEY}
     networks:
       - agent-domain
     entrypoint: /bin/bash
@@ -30,6 +31,19 @@ services:
       "-c",
       "python -u app/main.py;"
     ]
+  agent-wallet-db:
+    image: postgres:11
+    container_name: agent-wallet-db
+    command: postgres -c listen_addresses='*'
+    environment:
+      POSTGRES_PASSWORD: dbpass
+      POSTGRES_USER: postgres
+      POSTGRES_DB: wallets
+    volumes:
+      - ./resources/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - agent-domain
+    tty: true
   ngrok-agent:
     image: wernight/ngrok
     command: ngrok http agent:${HTTP_PORT} --log stdout
@@ -40,14 +54,28 @@ services:
       context: agent
       dockerfile: Dockerfile
     environment:
+      ACAPY_OUTBOUND_TRANSPORT: http
+      ACAPY_ADMIN: "[0.0.0.0,${ADMIN_PORT}]"
+      ACAPY_WEBHOOK_URL: ${AGENT_WEBHOOK_URL}
+      ACAPY_ADMIN_API_KEY: ${ADMIN_API_KEY}
+      ACAPY_LABEL: ${AGENT_NAME}
+      ACAPY_WALLET_NAME: ${WALLET_NAME}
+      ACAPY_WALLET_KEY: ${WALLET_KEY}
+      ACAPY_WALLET_TYPE: indy
+      ACAPY_WALLET_STORAGE_TYPE: postgres_storage
+      ACAPY_WALLET_STORAGE_CONFIG: '{"url":"agent-wallet-db:5432","wallet_scheme":"MultiWalletSingleTable"}'
+      ACAPY_WALLET_STORAGE_CREDS: '{"account":"postgres","password":"dbpass","admin_account":"postgres","admin_password":"dbpass"}'
+      ACAPY_GENESIS_URL: https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_sandbox_genesis
+      ACAPY_WALLET_LOCAL_DID: "true"
+      ACAPY_LOG_LEVEL: info
+      ACAPY_AUTO_PROVISION: "true"
       NGROK_NAME: ngrok-agent
-      AGENT_NAME: OpenMined
       PORT: ${HTTP_PORT}
-      ADMIN_PORT: ${ADMIN_PORT}
-      WEBHOOK_URL: ${WEBHOOK_URL}
     ports:
       - ${HTTP_PORT}:${HTTP_PORT}
       - ${ADMIN_PORT}:${ADMIN_PORT}
+    depends_on:
+      - agent-wallet-db
     networks:
       - agent-domain
     volumes:

@@ -16,11 +16,16 @@ WEBHOOK_HOST = os.getenv('WEBHOOK_HOST')
 WEBHOOK_PORT = os.getenv('WEBHOOK_PORT')
 WEBHOOK_BASE = os.getenv('WEBHOOK_BASE')
 ADMIN_URL = os.getenv('ADMIN_URL')
+API_KEY = os.getenv('API_KEY')
+
+print(WEBHOOK_HOST)
+print(WEBHOOK_PORT)
+print(WEBHOOK_BASE)
 
 logger.info(f"Initialising Agent. Webhook URL {WEBHOOK_HOST}:{WEBHOOK_PORT}{WEBHOOK_BASE}. ADMIN_URL - {ADMIN_URL}")
 
 agent_controller = AriesAgentController(webhook_host=WEBHOOK_HOST, webhook_port=WEBHOOK_PORT,
-                                       webhook_base=WEBHOOK_BASE, admin_url=ADMIN_URL)
+                                       webhook_base="", admin_url=ADMIN_URL, api_key=API_KEY)
 
 
 
